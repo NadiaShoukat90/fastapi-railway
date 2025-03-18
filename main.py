@@ -29,7 +29,8 @@ class InputData(BaseModel):
 @app.post("/chat")
 async def chat_with_openai(data: InputData):
     try:
-        client = openai.OpenAI(api_key=OPENAI_API_KEY)  # ✅ Use the new API format
+        client = openai.Client(api_key=OPENAI_API_KEY)  # ✅ Fix it
+  # ✅ Use the new API format
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": data.user_input}]
