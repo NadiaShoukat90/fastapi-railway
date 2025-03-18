@@ -1,13 +1,16 @@
+import openai
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import openai
-import os
 from dotenv import load_dotenv
 
-# Load API key from .env
+# Load environment variables
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+if not OPENAI_API_KEY:
+    raise ValueError("Missing OpenAI API Key!")
 
 app = FastAPI()
 
@@ -20,18 +23,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Define input model
 class InputData(BaseModel):
     user_input: str
 
 @app.post("/chat")
-def chat_with_openai(data: InputData):
+async def chat_with_openai(data: InputData):
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4o",  # Use "gpt-4o" or "gpt-3.5-turbo"
-            messages=[{"role": "user", "content": data.user_input}],
-            api_key=OPENAI_API_KEY
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)  # ✅ Use the new API format
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": data.user_input}]
         )
-        return {"response": response["choices"][0]["message"]["content"]}
+        return {"response": response.choices[0].message.content}
+    except openai.OpenAIError as e:
+        return {"error": f"OpenAI API Error: {str(e)}"}
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": f"Server Error: {str(e)}"}
